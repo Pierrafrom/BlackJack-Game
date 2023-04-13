@@ -12,9 +12,9 @@ SOLDE_DEPART = 1000  # Solde de départ par défaut
 NB_MAX_JOUEURS = 7  # Nombre maximum de joueurs
 MISE_MAX = 300  # Mise maximale par joueur
 MISE_MIN = 5  # Mise minimale par joueur
+PILE_DE_CARTES = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A']  # Le jeu de cartes
 
 # Variables globales
-pile_de_cartes = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A']  # Le jeu de cartes
 noms_dico = []  # Les noms des joueurs dans le dictionnaire seront stockés dans cette liste
 players = {}  # Les informations sur les joueurs seront stockées dans ce dictionnaire.
 main_croupier = []  # Les cartes du croupier seront stockées dans cette liste.
@@ -101,14 +101,14 @@ def miser(joueur):
 # Ajouter une carte aléatoire à la main d'un joueur
 def ajouter_carte(cartes):
     # On ajoute une carte aléatoire à la main du joueur
-    cartes.append(random.choice(pile_de_cartes))
+    cartes.append(random.choice(PILE_DE_CARTES))
 
 
 # Demander à chaque joueur s'il veut jouer le tour
 def initialiser_le_tour():
     # On ajoute deux cartes au croupier
-    main_croupier.append(random.choice(pile_de_cartes))
-    main_croupier.append(random.choice(pile_de_cartes))
+    main_croupier.append(random.choice(PILE_DE_CARTES))
+    main_croupier.append(random.choice(PILE_DE_CARTES))
     for i in range(len(players)):
         nom_dico = noms_dico[i]  # On récupère le nom du joueur dans le dictionnaire
         # On demande au joueur s'il veut jouer le tour
@@ -186,9 +186,9 @@ def est_blackjack(cartes):
 
 # Doubler la mise d'un joueur
 def doubler_mise(joueur):
-    if joueur["mise"] <= joueur["solde"]:
-        joueur["mise"] *= 2
-        joueur["solde"] -= joueur["mise"]
+    if players[joueur]["mise"] <= players[joueur]["solde"]:
+        players[joueur]["mise"] *= 2
+        players[joueur]["solde"] -= players[joueur]["mise"]
         return True
     else:
         print("Vous ne pouvez pas doubler votre mise car vous n'avez pas assez d'argent.")
@@ -197,12 +197,12 @@ def doubler_mise(joueur):
 
 # Si on a une paire, on peut se couper
 def split(joueur):
-    if joueur["cartes"][0] == joueur["cartes"][1]:
+    if players[joueur]["cartes"][0] == players[joueur]["cartes"][1]:
         # Cartes devient une liste à 2 dimensions avec 1 carte dans chaque sous-liste
-        joueur["cartes"] = [joueur["cartes"][0:1], joueur["cartes"][1:2]]
+        players[joueur]["cartes"] = [players[joueur]["cartes"][0:1], players[joueur]["cartes"][1:2]]
         # On ajoute une carte à chaque main
-        ajouter_carte(joueur["cartes"][0])
-        ajouter_carte(joueur["cartes"][1])
+        ajouter_carte(players[joueur]["cartes"][0])
+        ajouter_carte(players[joueur]["cartes"][1])
         return True
     else:
         print("Vous ne pouvez pas vous couper car vous n'avez pas de paire.")
@@ -223,12 +223,12 @@ def assurer(joueur):
             assurance = int(assurance_str)
 
             # Vérifie que le joueur à assez d'argent pour assurer sa mise
-            if assurance <= joueur["mise"] / 2 and assurance <= joueur["solde"]:
+            if assurance <= players[joueur]["mise"] / 2 and assurance <= players[joueur]["solde"]:
                 # Vu que nous n'afficherons pas les soldes en temps réel, nous pouvons gérer directement les
                 # évolutions du solde ici pour simplifier la gestion de la fin de partie.
-                joueur["solde"] -= assurance
+                players[joueur]["solde"] -= assurance
                 if est_blackjack(main_croupier):
-                    joueur["solde"] += assurance * 2
+                    players[joueur]["solde"] += assurance * 2
                 return True
             else:
                 print(
@@ -296,9 +296,9 @@ def demander_action(joueur):
             demander_action(joueur)
         else:
             # On ajoute une carte à la main du joueur
-            ajouter_carte(joueur["cartes"])
+            ajouter_carte(players[joueur]["cartes"])
             # on affiche sa main
-            print("Votre main est maintenant : " + str(joueur["cartes"]))
+            print("Votre main est maintenant : " + str(players[joueur]["cartes"]))
     elif action == 3:
         # Si split renvoie faux on redemande une action
         if not split(joueur):
@@ -309,7 +309,7 @@ def demander_action(joueur):
             demander_action(joueur)
     elif action == 5:
         # On met le joueur en mode "ne joue pas"
-        joueur["joue"] = False
+        players[joueur]["joue"] = False
         print("Vous avez abandonné la partie.")
     else:
         pass
@@ -364,7 +364,7 @@ def jouer_tour():
                     print(players[joueur]["nom"] + ", vous obtenez " + str(
                         calculer_valeur_main(players[joueur]["cartes"])) + " points.")
                     if calculer_valeur_main(players[joueur]["cartes"]) > calculer_valeur_main(main_croupier):
-                        print("Vous avez gagné " + str(players[joueur]["mise"]*2) + " euros !")
+                        print("Vous avez gagné " + str(players[joueur]["mise"] * 2) + " euros !")
                         # On met à jour le solde du joueur
                         players[joueur]["solde"] += players[joueur]["mise"] * 2
                     elif calculer_valeur_main(players[joueur]["cartes"]) == calculer_valeur_main(main_croupier):
@@ -398,9 +398,93 @@ def demander_quitter_partie():
         # On supprime le joueur de la partie
         print(players[noms_dico[indice]]["nom"] + " a quitté la partie.")
         del players[noms_dico[indice]]
+        del noms_dico[indice]
+        # On demande si un autre joueur veut quitter la partie
+        demander_quitter_partie()
     elif choix == "n":
         return
 
+
+# Demander si un nouveau joueur veut rejoindre la partie
+def demander_rejoindre_partie():
+    print("Est ce que quelqu'un souhaite rejoindre la partie ? (o/n)")
+    choix = sys.stdin.readline().rstrip('\n')
+    choix = choix.lower()
+    while choix not in ["o", "n"]:
+        print("Veuillez saisir 'o' pour 'oui' or 'n' pour 'non'.")
+        choix = sys.stdin.readline().rstrip('\n')
+        choix = choix.lower()
+    if choix == "o":
+        # On demande le nom du joueur qui rejoint la partie
+        print("Quel est le nom du joueur qui rejoint la partie ?")
+        nom = sys.stdin.readline().rstrip('\n')
+        # On ajoute le joueur à la partie
+        print(nom + " a rejoint la partie.")
+        nom_dico = "joueur" + str(len(players) + 1)
+        players[nom_dico] = {"nom": nom, "solde": SOLDE_DEPART, "mise": 0, "cartes": [], "joue": False}
+        noms_dico.append(nom_dico)
+        # On demande si un autre joueur veut rejoindre la partie
+        demander_rejoindre_partie()
+    else:
+        return
+
+
+# Tester si la partie est terminée
+def est_partie_terminee():
+    # On teste si la partie est terminée
+    if len(players) == 0:
+        return True
+    else:
+        return False
+
+
+# Supprimer les joueurs qui ont perdu
+def supprimer_joueurs_perdus():
+    # On supprime les joueurs qui ont perdu
+    for joueur in players:
+        if players[joueur]["solde"] <= 0:
+            print(players[joueur]["nom"] + " a perdu car il n'a plus d'argent!")
+            del players[joueur]
+
+
+# Demander si on veut rejouer une partie
+def demander_rejouer_partie():
+    print("Voulez vous rejouer une partie ? (o/n)")
+    choix = sys.stdin.readline().rstrip('\n')
+    choix = choix.lower()
+    while choix not in ["o", "n"]:
+        print("Veuillez saisir 'o' pour 'oui' or 'n' pour 'non'.")
+        choix = sys.stdin.readline().rstrip('\n')
+        choix = choix.lower()
+    if choix == "o":
+        return True
+    else:
+        return False
+
+
+# Jouer une partie
+def jouer_partie():
+    do_replay = True
+    while do_replay:
+        # On initialise le jeu
+        initialisation()
+        # On joue des tours tant que la partie n'est pas terminée
+        while not est_partie_terminee():
+            # On joue un tour
+            jouer_tour()
+            # On demande si un joueur veut quitter la partie
+            demander_quitter_partie()
+            # On demande si un joueur veut rejoindre la partie
+            demander_rejoindre_partie()
+            # On supprime les joueurs qui ont perdu
+            supprimer_joueurs_perdus()
+        # On demande si on veut rejouer une partie
+        print ("La partie est terminée.")
+        do_replay = demander_rejouer_partie()
+
+
+# Lancement du jeu
+jouer_partie()
 
 """
 ⢀⡴⠑⡄⠀⠀⠀⠀⠀⠀⠀⣀⣀⣤⣤⣤⣀⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀ 
