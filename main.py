@@ -556,7 +556,7 @@ def jouer_tour():
             # On regarde si le joueur a fait un blackjack
             if est_blackjack(players[joueur]["cartes"]):
                 # Si le joueur a un blackjack, on lui annonce
-                print("Vous avez fait un blackjack !")
+                print(players[joueur]["nom"] + "Vous avez fait un blackjack !")
                 # On met le joueur en mode "ne joue pas"
                 players[joueur]["joue"] = False
                 # On met à jour le solde du joueur
@@ -635,28 +635,45 @@ def demander_quitter_partie():
         choix = choix.lower()
 
     if choix == "o":
-        # Si le joueur veut quitter la partie, on lui demande son nom
-        print("Quel est le nom du joueur qui quitte la partie ?")
-        nom = sys.stdin.readline().rstrip('\n')
-        indice = 0
-
-        # On vérifie que le nom du joueur est bien celui d'un joueur de la partie et on récupère son indice
-        while nom != players[noms_dico[indice]]["nom"]:
-            print("Ce joueur n'est pas dans la partie.")
-            print("Quel est le nom du joueur qui quitte la partie ?")
-            nom = sys.stdin.readline().rstrip('\n')
-            indice += 1
-
-        # On supprime le joueur de la partie
-        print(players[noms_dico[indice]]["nom"] + " a quitté la partie.")
-        del players[noms_dico[indice]]
-        del noms_dico[indice]
+        # Si quelqu'un veut quitter la partie, on demande à quel joueur il s'agit
+        quitter_partie()
 
         # On demande si un autre joueur veut quitter la partie
         demander_quitter_partie()
     elif choix == "n":
         # Si personne ne veut quitter la partie, on quitte simplement la fonction
         return
+
+
+def quitter_partie():
+    """
+    Permet de gérer le cas ou un joueur veut quitter la partie.
+
+    :param:
+        None
+
+    :return:
+        None
+    """
+    # Si le joueur veut quitter la partie, on lui demande son nom
+    print("Quel est le nom du joueur qui quitte la partie ?")
+    nom = sys.stdin.readline().rstrip('\n')
+    indice = 0
+    found = False  # On initialise une variable pour savoir si le nom du joueur est dans la partie
+
+    # On vérifie que le nom du joueur est bien celui d'un joueur de la partie et on récupère son indice
+    while indice < len(players) and not found:
+        found = nom == players[noms_dico[indice]]["nom"]
+        indice += 1
+
+    # On supprime le joueur de la partie
+    if found:
+        print(players[noms_dico[indice-1]]["nom"] + " a quitté la partie.")
+        del players[noms_dico[indice-1]]
+        del noms_dico[indice-1]
+    else:
+        print("Ce joueur n'est pas dans la partie.")
+        quitter_partie()
 
 
 def demander_rejoindre_partie():
